@@ -1,0 +1,3 @@
+
+set completefunc=xaml#complete
+
