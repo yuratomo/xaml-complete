@@ -506,7 +506,7 @@ call xaml#enum('Thickness', [
   \ xaml#prop('10,10,10,10', ''),
   \ ])
 
-call xaml#enum(TextAlignment', [
+call xaml#enum('TextAlignment', [
   \ xaml#prop('Left', ''),
   \ xaml#prop('Right', ''),
   \ xaml#prop('Center', ''),

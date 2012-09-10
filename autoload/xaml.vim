@@ -2,10 +2,8 @@
 let [ s:MODE_TAG , s:MODE_ATTR, s:MODE_VALUE, s:MODE_BINDING ] = range(4)
 let s:xaml_complete_mode = s:MODE_TAG
 
-" Tag name for attribute-complete
+let s:namespace = ''
 let s:tag = ''
-
-" Property name for value-complete
 let s:property = ''
 
 function! xaml#test()
@@ -17,7 +15,7 @@ function! xaml#complete(findstart, base)
     " find start of word
     let line = getline('.')
     let start = col('.') - 1
-    while start > 0 && line[start - 1] !~ '[< : \t"]'
+    while start > 0 && line[start - 1] !~ '[< :. \t"]'
       let start -= 1
     endwhile
 
@@ -92,7 +90,7 @@ function! s:find_tag_name()
   while l >= 0
     " find first <:
     while idx >= 0 && line[idx] !~ '[<:]'
-      if line[idx] == ' '
+      if line[idx] == ' ' || line[idx] == '.'
         let tag_end = idx - 1
       endif
       let idx -= 1
@@ -138,7 +136,7 @@ function! s:attr_completion(tag, base, res)
     if item.name =~ '^' . a:tag
       for member in item.members
         if member.name =~ '^' . a:base
-          call add(a:res, s:member_to_compitem(member))
+          call add(a:res, s:member_to_compitem(item.name, member))
         endif
       endfor
       " find super class member
@@ -160,7 +158,7 @@ function! s:value_completion(tag, prop, base, res)
     if enum.name == prop_type
       for member in enum.members
         if member.name =~ '^' . a:base
-          call add(a:res, s:member_to_compitem(member))
+          call add(a:res, s:member_to_compitem(member.name, member))
         endif
       endfor
     endif
@@ -187,10 +185,10 @@ function! s:find_member_type(tag, prop)
   return ''
 endfunction
 
-function! s:member_to_compitem(member)
+function! s:member_to_compitem(class, member)
   return {
     \ 'word' : a:member.name,
-    \ 'menu' : a:member.desc,
+    \ 'menu' : '[' . a:class . '] ' . a:member.desc,
     \ 'kind' : a:member.type,
     \}
 endfunction
@@ -234,5 +232,4 @@ endfunction
 for file in split(globpath(&runtimepath, 'autoload/xaml/*.vim'), '\n')
   exe 'so ' . file
 endfor
-
 

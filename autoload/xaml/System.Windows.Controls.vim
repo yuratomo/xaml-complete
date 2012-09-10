@@ -848,6 +848,8 @@ call xaml#class('Menu', 'MenuBase', [
   \ ])
 
 call xaml#class('Page', 'FrameworkElement', [
+  \ xaml#prop('xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"', ''),
+  \ xaml#prop('xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"', ''),
   \ xaml#prop('Content', 'object'),
   \ xaml#prop('Background', 'Brush'),
   \ xaml#prop('Title', 'string'),

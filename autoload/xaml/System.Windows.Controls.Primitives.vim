@@ -13,7 +13,7 @@ call xaml#class('ButtonBase', 'ContentControl', [
   \ xaml#prop('CommandParameter', 'object'),
   \ xaml#prop('CommandTarget', 'IInputElement'),
   \ xaml#prop('IsPressed', 'bool'),
-  \ xaml#prop('ClickMode', 'Controls.ClickMode'),
+  \ xaml#prop('ClickMode', 'ClickMode'),
   \ ])
 
 call xaml#class('Selector', 'ItemsControl', [
