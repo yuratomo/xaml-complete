@@ -512,3 +512,12 @@ call xaml#enum('TextAlignment', [
   \ xaml#prop('Center', ''),
   \ xaml#prop('Justify', ''),
   \ ])
+
+call xaml#enum('BindinMode', [
+  \ xaml#prop('TwoWay', ''),
+  \ xaml#prop('OneWay', ''),
+  \ xaml#prop('OneTime', ''),
+  \ xaml#prop('OneWayToSource', ''),
+  \ xaml#prop('Default', ''),
+  \ ])
+

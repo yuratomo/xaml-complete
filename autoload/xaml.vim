@@ -1,13 +1,16 @@
 
 let [ s:MODE_TAG , s:MODE_ATTR, s:MODE_VALUE, s:MODE_BINDING ] = range(4)
+let [ s:TYPE_ENUM , s:TYPE_EVENT, s:TYPE_PROP ] = range(3)
+let [ s:TAG_KIND_NORMAL, s:TAG_KIND_BRACE ] = range(2)
 let s:xaml_complete_mode = s:MODE_TAG
 
 let s:namespace = ''
 let s:tag = ''
+let s:tag_kind = ''
 let s:property = ''
 
 function! xaml#test()
-  echoerr s:xaml_complete_mode
+  echoerr s:tag . "-" . s:property
 endfun
 
 function! xaml#complete(findstart, base)
@@ -15,7 +18,7 @@ function! xaml#complete(findstart, base)
     " find start of word
     let line = getline('.')
     let start = col('.') - 1
-    while start > 0 && line[start - 1] !~ '[< :. \t"]'
+    while start > 0 && line[start - 1] !~ '[<> :.{ \t"]'
       let start -= 1
     endwhile
 
@@ -26,6 +29,8 @@ function! xaml#complete(findstart, base)
       let s:xaml_complete_mode = s:MODE_VALUE
     elseif line[start - 1] == '{'
       let s:xaml_complete_mode = s:MODE_BINDING
+    elseif line[start - 1] == '>'
+      return
     else
       let s:xaml_complete_mode = s:MODE_ATTR
     endif
@@ -67,12 +72,20 @@ function! xaml#complete(findstart, base)
       call s:tag_completion(a:base, res)
 
     elseif s:xaml_complete_mode == s:MODE_ATTR
-      if exists('s:tag')
-        call s:attr_completion(s:tag, a:base, res)
+      if s:tag_kind == s:TAG_KIND_NORMAL
+        if exists('s:tag')
+          call s:attr_completion(s:tag, a:base, res)
+        endif
+      elseif s:tag_kind == s:TAG_KIND_BRACE
+        call s:bind_attr_completion(s:tag, a:base, res)
       endif
 
     elseif s:xaml_complete_mode == s:MODE_VALUE
-        call s:value_completion(s:tag, s:property, a:base, res)
+      call s:value_completion(s:tag, s:property, a:base, res)
+
+    elseif s:xaml_complete_mode == s:MODE_BINDING
+      call s:binding_completion(a:base, res)
+
     endif
 
     return res
@@ -86,28 +99,43 @@ function! s:find_tag_name()
   let idx = col('.')
   let line = getline(l)
   let tag_end = idx
+  let coron = - 1
+  let brace_count = 0
 
   while l >= 0
-    " find first <:
-    while idx >= 0 && line[idx] !~ '[<:]'
+    " find first tagstart(<)
+    while idx >= 0 && line[idx] != '<'
       if line[idx] == ' ' || line[idx] == '.'
         let tag_end = idx - 1
+      elseif line[idx] == ':'
+        let coron = idx
+      elseif line[idx] == '{'
+        let brace_count += 1
+        if brace_count > 0
+          break
+        endif
+      elseif line[idx] == '}'
+        let brace_count -= 1
+      elseif line[idx] == '>'
+        return ''
       endif
       let idx -= 1
     endwhile
-    if line[idx] =~ '[<:]'
+    if line[idx] =~ '[<{]'
       " Resolve Namespace for Attribute
-      if line[idx] == ':'
-        let namespace_end = idx - 1
-        while idx >= 0 && line[idx] !~ '[< \t]'
-          let idx -= 1
-        endwhile
+      if coron != -1
+        let namespace_end = coron - 1
         let namespace_start = idx + 1
         let s:namespace = line[namespace_start : namespace_end]
       endif
       " Resolve TagName for Attribute
       let tag_start = idx+1
       let tag = line[tag_start : tag_end]
+      if line[idx] == '{'
+        let s:tag_kind = s:TAG_KIND_BRACE
+      else
+        let s:tag_kind = s:TAG_KIND_NORMAL
+      endif
       break
     endif
 
@@ -133,7 +161,7 @@ endfunction
 
 function! s:attr_completion(tag, base, res)
   for item in s:class
-    if item.name =~ '^' . a:tag
+    if item.name == a:tag
       for member in item.members
         if member.name =~ '^' . a:base
           call add(a:res, s:member_to_compitem(item.name, member))
@@ -148,14 +176,28 @@ function! s:attr_completion(tag, base, res)
   endfor
 endfunction
 
+function! s:bind_attr_completion(tag, base, res)
+  for item in s:binding
+    if item.name == a:tag
+      for member in item.members
+        if member.name =~ '^' . a:base
+          call add(a:res, s:member_to_compitem(item.name, member))
+        endif
+      endfor
+      break
+    endif
+  endfor
+  " find x:Name and Name
+endfunction
+
 function! s:value_completion(tag, prop, base, res)
-  let prop_type = s:find_member_type(a:tag, a:prop)
-  if prop_type == ''
+  let mtype = s:find_member_type(a:tag, a:prop)
+  if !exists('mtype.class') || mtype.class == ''
     return
   endif
 
   for enum in s:enum
-    if enum.name == prop_type
+    if enum.name == mtype.class
       for member in enum.members
         if member.name =~ '^' . a:base
           call add(a:res, s:member_to_compitem(member.name, member))
@@ -164,6 +206,23 @@ function! s:value_completion(tag, prop, base, res)
     endif
   endfor
 
+  " if no exists member then append type
+  if len(a:res) == 0
+    if mtype.type == s:TYPE_EVENT
+      call add(a:res, a:tag . '_' . a:prop)
+    else
+      call add(a:res, '//' . mtype.class)
+    endif
+  endif
+endfunction
+
+function! s:binding_completion(base, res)
+  for item in s:binding
+    if item.name =~ a:base
+      call add(a:res, s:member_to_compitem(item.name, item))
+    endif
+  endfor
+  return xaml#prop('', '')
 endfunction
 
 function! s:find_member_type(tag, prop)
@@ -171,7 +230,7 @@ function! s:find_member_type(tag, prop)
     if item.name == a:tag
       for member in item.members
         if member.name == a:prop
-          return member.desc
+          return member
         endif
       endfor
 
@@ -182,14 +241,14 @@ function! s:find_member_type(tag, prop)
       break
     endif
   endfor
-  return ''
+  return xaml#prop('', '')
 endfunction
 
 function! s:member_to_compitem(class, member)
   return {
     \ 'word' : a:member.name,
-    \ 'menu' : '[' . a:class . '] ' . a:member.desc,
-    \ 'kind' : a:member.type,
+    \ 'menu' : '[' . a:class . '] ' . a:member.class,
+    \ 'kind' : a:member.kind,
     \}
 endfunction
 
@@ -197,34 +256,47 @@ let s:class = []
 function! xaml#class(name, extend, members)
   call add(s:class, {
     \ 'name'   : a:name,
-    \ 'type'   : 't',
+    \ 'kind'   : 't',
     \ 'extend' : a:extend,
     \ 'members': a:members,
     \ })
 endfunction
 
-function! xaml#prop(name, desc)
+function! xaml#prop(name, class)
   return {
-    \ 'type'   : 'm', 
+    \ 'type'   : s:TYPE_PROP,
+    \ 'kind'   : 'm', 
     \ 'name'   : a:name,
-    \ 'desc'   : a:desc,
+    \ 'class'  : a:class,
     \ }
 endfunction
 
-function! xaml#event(name, desc)
+function! xaml#event(name, class)
   return {
-    \ 'type'   : 'f',
+    \ 'type'   : s:TYPE_EVENT,
+    \ 'kind'   : 'f',
     \ 'name'   : a:name,
-    \ 'desc'   : a:desc,
+    \ 'class'  : a:class,
     \ }
 endfunction
 
 let s:enum = []
 function! xaml#enum(name, members)
   call add(s:enum, {
+    \ 'type'   : s:TYPE_ENUM,
     \ 'name'   : a:name,
-    \ 'type'   : 't',
+    \ 'kind'   : 't',
     \ 'members': a:members,
+    \ })
+endfunction
+
+let s:binding = []
+function! xaml#bind(name, members)
+  call add(s:binding, {
+    \ 'name'   : a:name,
+    \ 'kind'   : 't',
+    \ 'members': a:members,
+    \ 'class'  : 'Binding',
     \ })
 endfunction
 

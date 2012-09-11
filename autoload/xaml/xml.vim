@@ -1,3 +1,4 @@
+call xaml#class('?xml version="1.0" encoding="UTF-8">', '', [])
 
 call xaml#class('?xml', '', [
   \ xaml#prop('version', 'xml-version'),
@@ -12,3 +13,4 @@ call xaml#enum('xml-encoding', [
   \ xaml#prop('UTF-8', ''),
   \ xaml#prop('shift-jis', ''),
   \ ])
+

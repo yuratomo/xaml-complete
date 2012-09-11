@@ -811,7 +811,7 @@ call xaml#class('Label', 'ContentControl', [
   \ xaml#prop('Target', 'UIElement'),
   \ ])
 
-call xaml#class('ListBox', 'SelListBox', [
+call xaml#class('ListBox', 'Selector', [
   \ xaml#prop('SelectionMode', 'SelectionMode'),
   \ xaml#prop('SelectedItems', 'IList'),
   \ xaml#prop('HandlesScrolling', 'bool'),
