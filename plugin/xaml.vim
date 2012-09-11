@@ -1,3 +1,3 @@
 
-set completefunc=xaml#complete
+autocmd FileType xaml setl completefunc=xaml#complete
 

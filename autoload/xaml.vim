@@ -9,10 +9,6 @@ let s:tag = ''
 let s:tag_kind = ''
 let s:property = ''
 
-function! xaml#test()
-  echoerr s:tag . "-" . s:property
-endfun
-
 function! xaml#complete(findstart, base)
   if a:findstart
     " find start of word
@@ -188,6 +184,9 @@ function! s:bind_attr_completion(tag, base, res)
     endif
   endfor
   " find x:Name and Name
+  for name in x:names()
+    call insert(a:res, s:member_to_compitem(name, {}), 0)
+  endfor
 endfunction
 
 function! s:value_completion(tag, prop, base, res)
@@ -244,12 +243,38 @@ function! s:find_member_type(tag, prop)
   return xaml#prop('', '')
 endfunction
 
+function! x:names()
+  let names = []
+  let lines = getline(1, line('$'))
+  for line in lines
+    if line =~ '\<x:Name='
+      let start = matchstr(line, "\<x:Name")
+    elseif line =~ '\<Name='
+      let start = matchstr(line, "\<Name")
+    else
+      continue
+    endif
+    let start = stridx(line, '"', start+1)
+    let end   = stridx(line, '"', start+1)
+    call add(names, line[ start+1 : end-1 ])
+  endfor
+  return names
+endfun
+
 function! s:member_to_compitem(class, member)
-  return {
-    \ 'word' : a:member.name,
-    \ 'menu' : '[' . a:class . '] ' . a:member.class,
-    \ 'kind' : a:member.kind,
-    \}
+  if empty(a:member)
+    return {
+      \ 'word' : a:class,
+      \ 'menu' : a:class,
+      \ 'kind' : 't',
+      \}
+  else
+    return {
+      \ 'word' : a:member.name,
+      \ 'menu' : '[' . a:class . '] ' . a:member.class,
+      \ 'kind' : a:member.kind,
+      \}
+  endif
 endfunction
 
 let s:class = []

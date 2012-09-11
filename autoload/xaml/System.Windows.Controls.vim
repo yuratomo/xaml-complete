@@ -1121,6 +1121,8 @@ call xaml#class('UIElementCollection', 'Object', [
   \ ])
 
 call xaml#class('UserControl', 'ContentControl', [
+  \ xaml#prop('xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"', ''),
+  \ xaml#prop('xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"', ''),
   \ xaml#prop('StateGroupsRoot', 'FrameworkElement'),
   \ ])
 
