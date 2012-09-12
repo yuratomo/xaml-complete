@@ -1,4 +1,6 @@
 call xaml#class('Application', 'DispatcherObject', [
+  \ xaml#prop('xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"', ''),
+  \ xaml#prop('xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"', ''),
   \ xaml#event('Startup', 'StartupEventHandler'),
   \ xaml#event('Exit', 'ExitEventHandler'),
   \ xaml#event('Activated', 'EventHandler'),

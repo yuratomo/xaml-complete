@@ -9,19 +9,25 @@ let s:tag = ''
 let s:tag_kind = ''
 let s:property = ''
 
+function! xaml#test()
+  echoerr s:tag
+  echoerr s:tag_kind
+  echoerr s:property
+endfunction
+
 function! xaml#complete(findstart, base)
   if a:findstart
     " find start of word
     let line = getline('.')
     let start = col('.') - 1
-    while start > 0 && line[start - 1] !~ '[<> :.{ \t"]'
+    while start > 0 && line[start - 1] !~ '[<> :.={ \t"]'
       let start -= 1
     endwhile
 
     "resolve type
     if line[start - 1] =~ '[<:]'
       let s:xaml_complete_mode = s:MODE_TAG
-    elseif line[start - 1] == '"'
+    elseif line[start - 1] =~ '["=]'
       let s:xaml_complete_mode = s:MODE_VALUE
     elseif line[start - 1] == '{'
       let s:xaml_complete_mode = s:MODE_BINDING
@@ -35,9 +41,10 @@ function! xaml#complete(findstart, base)
       " Resolve TagName for Attribute
       let s:tag = s:find_tag_name()
     elseif start > 2 && s:xaml_complete_mode == s:MODE_VALUE
+      let eq = strridx(line, '=', start-1)
       " start-1   --> "
-      if line[start - 2] == '='
-        let prop_end = start - 3
+      if eq != -1
+        let prop_end = eq - 1
         let tag_end = -1
         let idx = prop_end
         while idx >= 0 && line[idx] !~ '[ \t]'
@@ -190,7 +197,11 @@ function! s:bind_attr_completion(tag, base, res)
 endfunction
 
 function! s:value_completion(tag, prop, base, res)
-  let mtype = s:find_member_type(a:tag, a:prop)
+  if s:tag_kind == s:TAG_KIND_NORMAL
+    let mtype = s:find_member_type(s:class, a:tag, a:prop)
+  else
+    let mtype = s:find_member_type(s:binding, a:tag, a:prop)
+  endif
   if !exists('mtype.class') || mtype.class == ''
     return
   endif
@@ -224,8 +235,8 @@ function! s:binding_completion(base, res)
   return xaml#prop('', '')
 endfunction
 
-function! s:find_member_type(tag, prop)
-  for item in s:class
+function! s:find_member_type(src, tag, prop)
+  for item in a:src
     if item.name == a:tag
       for member in item.members
         if member.name == a:prop
@@ -235,7 +246,7 @@ function! s:find_member_type(tag, prop)
 
       " find super class member
       if item.extend != ''
-        return s:find_member_type(item.extend, a:prop)
+        return s:find_member_type(a:src, item.extend, a:prop)
       endif
       break
     endif
