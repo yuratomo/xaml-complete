@@ -471,6 +471,16 @@ call xaml#class('Grid', 'Panel', [
   \ xaml#prop('ColumnSpan', 'int32'),
   \ xaml#prop('RowSpan', 'int32'),
   \ xaml#prop('IsSharedSizeScope', 'bool'),
+  \ xaml#prop('LogicalChildren', 'IEnumerator'),
+  \ xaml#prop('ShowGridLines', 'bool'),
+  \ xaml#prop('ColumnDefinitions', 'ColumnDefinitionCollection'),
+  \ xaml#prop('RowDefinitions', 'RowDefinitionCollection'),
+  \ xaml#prop('VisualChildrenCount', 'int32'),
+  \ xaml#prop('MeasureOverrideInProgress', 'bool'),
+  \ xaml#prop('ArrangeOverrideInProgress', 'bool'),
+  \ xaml#prop('ColumnDefinitionCollectionDirty', 'bool'),
+  \ xaml#prop('RowDefinitionCollectionDirty', 'bool'),
+  \ xaml#prop('EffectiveValuesInitialSize', 'int32'),
   \ ])
 
 call xaml#class('ViewBase', 'DependencyObject', [
@@ -1191,5 +1201,29 @@ call xaml#class('RowDefinition', 'DefinitionBase', [
   \ xaml#prop('Height', 'GridLength'),
   \ xaml#prop('MinHeight', 'float64'),
   \ xaml#prop('MaxHeight', 'float64'),
+  \ ])
+
+call xaml#class('Panel', 'FrameworkElement', [
+  \ xaml#prop('Background', 'Brush'),
+  \ xaml#prop('LogicalChildren', 'IEnumerator'),
+  \ xaml#prop('Children', 'UIElementCollection'),
+  \ xaml#prop('IsItemsHost', 'bool'),
+  \ xaml#prop('LogicalOrientation', 'Orientation'),
+  \ xaml#prop('HasLogicalOrientation', 'bool'),
+  \ xaml#prop('InternalChildren', 'UIElementCollection'),
+  \ xaml#prop('VisualChildrenCount', 'int32 '),
+  \ xaml#prop('Generator', 'IItemContainerGenerator'),
+  \ xaml#prop('VSP_IsVirtualizing', 'bool'),
+  \ xaml#prop('VSP_HasMeasured', 'bool'),
+  \ xaml#prop('VSP_IsPixelBased', 'bool'),
+  \ xaml#prop('IsDataBound', 'bool'),
+  \ xaml#prop('EffectiveValuesInitialSize', 'int32'),
+  \ ])
+
+call xaml#class('Panel', 'FrameworkElement', [
+  \ xaml#prop('Left', 'float64'),
+  \ xaml#prop('Top', 'float64'),
+  \ xaml#prop('Right', 'float64'),
+  \ xaml#prop('Bottom', 'float64'),
   \ ])
 

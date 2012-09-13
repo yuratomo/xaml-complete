@@ -157,7 +157,7 @@ endfunction
 function! s:tag_completion(base, res)
   for item in s:class
     if item.name =~ '^' . a:base
-      call add(a:res, item.name)
+      call add(a:res, s:class_to_compitem(item))
     endif
   endfor
 endfunction
@@ -286,6 +286,14 @@ function! s:member_to_compitem(class, member)
       \ 'kind' : a:member.kind,
       \}
   endif
+endfunction
+
+function! s:class_to_compitem(member)
+  return {
+    \ 'word' : a:member.name,
+    \ 'menu' : ':' . a:member.extend,
+    \ 'kind' : a:member.kind,
+    \}
 endfunction
 
 let s:class = []
