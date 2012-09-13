@@ -1011,7 +1011,7 @@ call xaml#class('SpellCheck', 'Object', [
   \ xaml#prop('CustomDictionaries', 'IList'),
   \ ])
 
-call xaml#class('TabControl', 'SelTabControl', [
+call xaml#class('TabControl', 'Selector', [
   \ xaml#prop('TabStripPlacement', 'Dock'),
   \ xaml#prop('SelectedContent', 'object'),
   \ xaml#prop('SelectedContentTemplate', 'DataTemplate'),
