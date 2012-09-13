@@ -99,7 +99,7 @@ endfunction
 function! s:find_tag_name()
   let tag = ''
   let l = line('.')
-  let idx = col('.')
+  let idx = col('.') - 1
   let line = getline(l)
   let tag_end = idx
   let coron = - 1
