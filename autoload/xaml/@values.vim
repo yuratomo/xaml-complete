@@ -6,8 +6,8 @@ call xaml#enum('GridLength', [
   \ ])
 
 call xaml#enum('bool', [
-  \ xaml#prop('true', ''),
-  \ xaml#prop('false', ''),
+  \ xaml#prop('True', ''),
+  \ xaml#prop('False', ''),
   \ ])
 
 call xaml#enum('Thickness', [
