@@ -3,17 +3,12 @@ let [ s:MODE_TAG , s:MODE_ATTR, s:MODE_VALUE, s:MODE_BINDING ] = range(4)
 let [ s:TYPE_ENUM , s:TYPE_EVENT, s:TYPE_PROP, s:TYPE_FIELD ] = range(4)
 let [ s:TAG_KIND_NORMAL, s:TAG_KIND_BRACE ] = range(2)
 let s:xaml_complete_mode = s:MODE_TAG
+let g:xaml_complete_item_len = 30
 
 let s:namespace = ''
 let s:tag = ''
 let s:tag_kind = ''
 let s:property = ''
-
-function! xaml#test()
-  echoerr s:tag
-  echoerr s:tag_kind
-  echoerr s:property
-endfunction
 
 function! xaml#complete(findstart, base)
   if a:findstart
@@ -69,7 +64,6 @@ function! xaml#complete(findstart, base)
     return start
 
   else
-
     let res = []
     if s:xaml_complete_mode == s:MODE_TAG
       call s:tag_completion(a:base, res)
@@ -88,9 +82,7 @@ function! xaml#complete(findstart, base)
 
     elseif s:xaml_complete_mode == s:MODE_BINDING
       call s:binding_completion(a:base, res)
-
     endif
-
     return res
   endif
 
@@ -191,9 +183,9 @@ function! s:bind_attr_completion(tag, base, res)
       call add(a:res, s:member_to_compitem(item.name, member))
     endif
   endfor
-  " find x:Name and Name
-  for name in x:names()
-    call insert(a:res, s:member_to_compitem(name, {}), 0)
+  " find x:Name and Name and x:Key
+  for member in x:names()
+    call insert(a:res, s:member_to_compitem('', member), 0)
   endfor
 endfunction
 
@@ -258,31 +250,46 @@ endfunction
 function! x:names()
   let names = []
   let lines = getline(1, line('$'))
+  let class = ''
   for line in lines
     if line =~ '\<x:Name='
       let start = matchstr(line, "\<x:Name")
+      let class = 'x:Name'
     elseif line =~ '\<Name='
       let start = matchstr(line, "\<Name")
+      let class = 'Name'
+    elseif line =~ '\<x:Key='
+      let start = matchstr(line, "\<x:Key")
+      let class = 'x:Key'
     else
       continue
     endif
     let start = stridx(line, '"', start+1)
     let end   = stridx(line, '"', start+1)
-    call add(names, line[ start+1 : end-1 ])
+    call add(names, xaml#prop(line[ start+1 : end-1 ], class))
   endfor
   return names
 endfun
+
+function! s:abbr(str)
+  if len(a:str) > g:xaml_complete_item_len
+    return a:str[0 : g:xaml_complete_item_len] . '...'
+  endif
+  return a:str
+endfunction
 
 function! s:member_to_compitem(class, member)
   if empty(a:member)
     return {
       \ 'word' : a:class,
+      \ 'abbr' : s:abbr(a:class),
       \ 'menu' : a:class,
       \ 'kind' : 't',
       \}
   else
     return {
       \ 'word' : a:member.name,
+      \ 'abbr' : s:abbr(a:member.name),
       \ 'menu' : '[' . a:class . '] ' . a:member.class,
       \ 'kind' : a:member.kind,
       \}
@@ -292,6 +299,7 @@ endfunction
 function! s:class_to_compitem(member)
   return {
     \ 'word' : a:member.name,
+    \ 'abbr' : s:abbr(a:member.name),
     \ 'menu' : ':' . a:member.extend,
     \ 'kind' : a:member.kind,
     \}
