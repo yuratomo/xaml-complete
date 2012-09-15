@@ -1,6 +1,6 @@
 
 let [ s:MODE_TAG , s:MODE_ATTR, s:MODE_VALUE, s:MODE_BINDING ] = range(4)
-let [ s:TYPE_ENUM , s:TYPE_EVENT, s:TYPE_PROP ] = range(3)
+let [ s:TYPE_ENUM , s:TYPE_EVENT, s:TYPE_PROP, s:TYPE_FIELD ] = range(4)
 let [ s:TAG_KIND_NORMAL, s:TAG_KIND_BRACE ] = range(2)
 let s:xaml_complete_mode = s:MODE_TAG
 
@@ -155,39 +155,40 @@ function! s:find_tag_name()
 endfunction
 
 function! s:tag_completion(base, res)
-  for item in s:class
-    if item.name =~ '^' . a:base
+  for key in keys(s:class)
+    if key =~ '^' . a:base
+      let item = s:class[ key ]
       call add(a:res, s:class_to_compitem(item))
     endif
   endfor
 endfunction
 
 function! s:attr_completion(tag, base, res)
-  for item in s:class
-    if item.name == a:tag
-      for member in item.members
-        if member.name =~ '^' . a:base
-          call add(a:res, s:member_to_compitem(item.name, member))
-        endif
-      endfor
-      " find super class member
-      if item.extend != ''
-        call s:attr_completion(item.extend, a:base, a:res)
-      endif
-      break
+  if !exists('s:class[ a:tag ]')
+    return
+  endif
+
+  let item = s:class[ a:tag ]
+  for member in item.members
+    if member.name =~ '^' . a:base
+      call add(a:res, s:member_to_compitem(item.name, member))
     endif
   endfor
+  " find super class member
+  if item.extend != ''
+    call s:attr_completion(item.extend, a:base, a:res)
+  endif
 endfunction
 
 function! s:bind_attr_completion(tag, base, res)
-  for item in s:binding
-    if item.name == a:tag
-      for member in item.members
-        if member.name =~ '^' . a:base
-          call add(a:res, s:member_to_compitem(item.name, member))
-        endif
-      endfor
-      break
+  if !exists('s:binding[ a:tag ]')
+    return
+  endif
+
+  let item = s:binding[ a:tag ]
+  for member in item.members
+    if member.name =~ '^' . a:base
+      call add(a:res, s:member_to_compitem(item.name, member))
     endif
   endfor
   " find x:Name and Name
@@ -206,15 +207,14 @@ function! s:value_completion(tag, prop, base, res)
     return
   endif
 
-  for enum in s:enum
-    if enum.name == mtype.class
-      for member in enum.members
-        if member.name =~ '^' . a:base
-          call add(a:res, s:member_to_compitem(member.name, member))
-        endif
-      endfor
-    endif
-  endfor
+  if exists('s:enum[mtype.class]')
+    let enum = s:enum[mtype.class]
+    for member in enum.members
+      if member.name =~ '^' . a:base
+        call add(a:res, s:member_to_compitem(member.name, member))
+      endif
+    endfor
+  endif
 
   " if no exists member then append type
   if len(a:res) == 0
@@ -227,30 +227,31 @@ function! s:value_completion(tag, prop, base, res)
 endfunction
 
 function! s:binding_completion(base, res)
-  for item in s:binding
-    if item.name =~ a:base
-      call add(a:res, s:member_to_compitem(item.name, item))
+  for key in keys(s:binding)
+    if key =~ a:base
+      let item = s:binding[ key ]
+      call add(a:res, s:member_to_compitem(key, item))
     endif
   endfor
   return xaml#prop('', '')
 endfunction
 
 function! s:find_member_type(src, tag, prop)
-  for item in a:src
-    if item.name == a:tag
-      for member in item.members
-        if member.name == a:prop
-          return member
-        endif
-      endfor
+  if !exists('a:src[ a:tag ]')
+    return
+  endif
 
-      " find super class member
-      if item.extend != ''
-        return s:find_member_type(a:src, item.extend, a:prop)
-      endif
-      break
+  let item = a:src[ a:tag ]
+  for member in item.members
+    if member.name == a:prop
+      return member
     endif
   endfor
+
+  " find super class member
+  if item.extend != ''
+    return s:find_member_type(a:src, item.extend, a:prop)
+  endif
   return xaml#prop('', '')
 endfunction
 
@@ -296,20 +297,29 @@ function! s:class_to_compitem(member)
     \}
 endfunction
 
-let s:class = []
+let s:class = {}
 function! xaml#class(name, extend, members)
-  call add(s:class, {
+  let s:class[ a:name ] = {
     \ 'name'   : a:name,
     \ 'kind'   : 't',
     \ 'extend' : a:extend,
     \ 'members': a:members,
-    \ })
+    \ }
 endfunction
 
 function! xaml#prop(name, class)
   return {
     \ 'type'   : s:TYPE_PROP,
     \ 'kind'   : 'm', 
+    \ 'name'   : a:name,
+    \ 'class'  : a:class,
+    \ }
+endfunction
+
+function! xaml#field(name, class)
+  return {
+    \ 'type'   : s:TYPE_FIELD,
+    \ 'kind'   : 'v', 
     \ 'name'   : a:name,
     \ 'class'  : a:class,
     \ }
@@ -324,28 +334,31 @@ function! xaml#event(name, class)
     \ }
 endfunction
 
-let s:enum = []
+let s:enum = {}
 function! xaml#enum(name, members)
-  call add(s:enum, {
+  let s:enum[ a:name ] = {
     \ 'type'   : s:TYPE_ENUM,
     \ 'name'   : a:name,
     \ 'kind'   : 't',
     \ 'members': a:members,
-    \ })
+    \ }
 endfunction
 
-let s:binding = []
+let s:binding = {}
 function! xaml#bind(name, members)
-  call add(s:binding, {
+  let s:binding[ a:name ] = {
     \ 'name'   : a:name,
     \ 'kind'   : 't',
     \ 'members': a:members,
     \ 'class'  : 'Binding',
-    \ })
+    \ }
 endfunction
 
 " load
 for file in split(globpath(&runtimepath, 'autoload/xaml/*.vim'), '\n')
+  exe 'echo "[xaml]load ' . substitute(file, '^.*\','','') . '"'
+  redraw
   exe 'so ' . file
+  echo '[xaml] loaded!'
 endfor
 
