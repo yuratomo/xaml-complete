@@ -354,6 +354,9 @@ function! xaml#bind(name, members)
     \ }
 endfunction
 
+function! xaml#load()
+endfunction
+
 " load
 for file in split(globpath(&runtimepath, 'autoload/xaml/*.vim'), '\n')
   exe 'echo "[xaml]load ' . substitute(file, '^.*\','','') . '"'
