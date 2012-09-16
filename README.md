@@ -1,7 +1,6 @@
 = Warning =
-------------------------------------------------------~
-       This plugin shifted to dotnet-complete
-------------------------------------------------------~
+
+    !!  This plugin shifted to dotnet-complete  !!
 
 * dotnet-complete
     https://github.com/yuratomo/dotnet-complete
